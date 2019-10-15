@@ -2,6 +2,7 @@ package jgomodel
 
 import (
 	"fmt"
+	"strings"
 	"github.com/jschneider98/jgoweb"
 	"github.com/jschneider98/jgoweb/db/psql"
 )
@@ -34,12 +35,33 @@ func NewModel(ctx jgoweb.ContextInterface, schema string, table string) (*Model,
 	return m, nil
 }
 
-// Validate the model
-func (m *Model) isValid() error {
-	return m.Ctx.GetValidator().Struct(m)
+//
+func (m *Model) GetInsertQuery() string {
+	var dbCols []string
+	var colList string
+	var placeHolders []string
+	var colCount int
+
+	// 
+	for key := range m.Fields {
+		if (m.Fields[key].DbFieldName != "id" && m.Fields[key].DbFieldName != "created_at" && m.Fields[key].DbFieldName != "updated_at") {
+			colCount++
+			// (account_id, units, ...)
+			dbCols = append(dbCols, m.Fields[key].DbFieldName)
+			// ($1, $2, ...)
+			placeHolders = append(placeHolders, fmt.Sprintf("$%d", colCount))
+		}
+	}
+
+	colList = strings.Join(dbCols, ",")
+	colList = strings.ReplaceAll(colList, ",", ",\n")
+
+	query := fmt.Sprintf("\t\t`INSERT INTO\n\t\t%s (%s)\n\t\t(%s)\n\t\tRETURNING id\n`", m.FullTableName, colList, strings.Join(placeHolders, ","))
+
+	return query
 }
 
 //
 func (m *Model) GetFullTableName() string {
-	return fmt.Sprintf(`"%s"."%s"`, m.Schema, m.Table)
+	return fmt.Sprintf("%s.%s", m.Schema, m.Table)
 }
