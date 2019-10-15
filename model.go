@@ -19,20 +19,28 @@ type Model struct {
 func NewModel(ctx jgoweb.ContextInterface, schema string, table string) (*Model, error) {
 	var err error
 
-	m := &Model{
-		Ctx: ctx,
-		Schema: schema,
-		Table: table,
-	}
-
-	m.FullTableName = m.GetFullTableName()
-	m.Fields, err = psql.GetFields(ctx, schema, table)
+	m := &Model{ Ctx: ctx }
+	err = m.SetMetaData(schema, table)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return m, nil
+}
+
+//
+func (m *Model) SetMetaData(schema string, table string) error {
+	var err error
+
+	m.Schema = schema
+	m.Table = table
+
+	m.FullTableName = m.GetFullTableName()
+	m.Fields, err = psql.GetFields(m.Ctx, schema, table)
+
+
+	return err
 }
 
 //
@@ -56,7 +64,7 @@ func (m *Model) GetInsertQuery() string {
 	colList = strings.Join(dbCols, ",")
 	colList = strings.ReplaceAll(colList, ",", ",\n")
 
-	query := fmt.Sprintf("\t\t`INSERT INTO\n\t\t%s (%s)\n\t\t(%s)\n\t\tRETURNING id\n`", m.FullTableName, colList, strings.Join(placeHolders, ","))
+	query := fmt.Sprintf("\t\t`INSERT INTO\n\t\t%s (%s)\n\t\tVALUES (%s)\n\t\tRETURNING id\n`", m.FullTableName, colList, strings.Join(placeHolders, ","))
 
 	return query
 }
