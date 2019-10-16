@@ -64,7 +64,7 @@ func (m *Model) GetInsertQuery() string {
 	colList = strings.Join(dbCols, ",")
 	colList = strings.ReplaceAll(colList, ",", ",\n")
 
-	query := fmt.Sprintf("\t\t`INSERT INTO\n\t\t%s (%s)\n\t\tVALUES (%s)\n\t\tRETURNING id\n`", m.FullTableName, colList, strings.Join(placeHolders, ","))
+	query := fmt.Sprintf("\t\tINSERT INTO\n\t\t%s (%s)\n\t\tVALUES (%s)\n\t\tRETURNING id\n", m.FullTableName, colList, strings.Join(placeHolders, ","))
 
 	return query
 }
